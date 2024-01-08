@@ -1,0 +1,30 @@
+{
+    "entries": [
+      {
+        "type": "text",
+        "name": "Name"
+      },
+      {
+        "type": "choice",
+        "name": "Class",
+        "options": [
+          "Warrior", 
+          "Wizard",
+          "Thief"
+        ]
+      },
+      {
+        "type": "number",
+        "name": "Level",
+        "range": [1, 20]
+      },
+      {
+        "type": "checkboxes",
+        "name": "Status",
+        "options": [
+          "Injured",
+          "Hurt"
+        ]
+      }
+    ]
+}
