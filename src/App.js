@@ -1,11 +1,11 @@
 import './App.css';
 import React from 'react';
-import DynamicForm from './DynamicForm';
+import DynamicPdfForm from './DynamicPdfForm';
 
 function App() {
   return (
     <div className="App">
-      <DynamicForm
+      <DynamicPdfForm
         jsonUrl="/char_gen.json"
       />
     </div>

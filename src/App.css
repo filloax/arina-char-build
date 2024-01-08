@@ -1,0 +1,29 @@
+html, body {
+    height: 95%;
+}
+
+body {
+    font-size: 30px;
+    background-color: lightgray;
+}
+
+.App {
+    max-width: 800px;
+    margin: 10px auto;
+    background-color: white;
+    height: 100%;
+    padding: 20px;
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+#pageSelect {
+    display: flex;
+    justify-content: space-between;
+}
+
+#debug {
+    font-size: small;
+    max-height: 500px;
+    overflow-y: scroll;
+}

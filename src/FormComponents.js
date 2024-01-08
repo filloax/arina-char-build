@@ -2,11 +2,11 @@ import React from "react";
 import PropTypes from "prop-types";
 
 // Text field component
-const TextField = ({ label, name, value, onChange }) => {
+const TextField = ({ label, name, value, onChange, big }) => {
     return (
         <div>
             <label>{label || name}</label>
-            <input type="text" name={name} value={value} onChange={(e) => onChange(e, name, e.target.value)} />
+            <input type={big ? "textarea" : "text"} name={name} value={value} onChange={(e) => onChange(e, name, e.target.value)} />
         </div>
     );
 };
@@ -16,7 +16,12 @@ TextField.propTypes = {
     label: PropTypes.string,
     onChange: PropTypes.func,
     value: PropTypes.string,
+    big: PropTypes.bool,
 };
+
+TextField.defaultProps = {
+    big: false,
+}
 
 // Choice select component
 const ChoiceSelect = ({ label, name, options, value, onChange }) => {
