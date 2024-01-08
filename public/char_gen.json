@@ -4,22 +4,29 @@
             "entries": [
                 {
                     "type": "text",
-                    "name": "Name"
+                    "name": "Name",
+                    "pdfkey": "CharacterName 2"
                 },
                 {
                     "type": "choice",
                     "name": "Class",
-                    "options": ["Warrior", "Wizard", "Thief"]
+                    "options": ["Warrior", "Wizard", "Thief"],
+                    "pdfkey": "ClassLevel"
                 },
                 {
                     "type": "number",
                     "name": "Level",
-                    "range": [1, 20]
+                    "range": [1, 20],
+                    "pdfkey": "ClassLevel"
                 },
                 {
                     "type": "checkboxes",
-                    "name": "Status",
-                    "options": ["Injured", "Hurt"]
+                    "name": "Esempio Crocette",
+                    "options": ["Forza", "Destrezza"],
+                    "pdfkeys": [
+                        "ST Strength",
+                        "ST Dexterity"
+                    ]
                 }
             ]
         },
@@ -27,7 +34,8 @@
             "entries": [
                 {
                     "type": "widetext",
-                    "name": "Background"
+                    "name": "Background",
+                    "pdfkey": "Backstory"
                 }
             ]
         }

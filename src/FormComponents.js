@@ -3,10 +3,12 @@ import PropTypes from "prop-types";
 
 // Text field component
 const TextField = ({ label, name, value, onChange, big }) => {
+    const Tag = (big) ? "textarea" : "input";
+
     return (
         <div>
             <label>{label || name}</label>
-            <input type={big ? "textarea" : "text"} name={name} value={value} onChange={(e) => onChange(e, name, e.target.value)} />
+            <Tag type={big ? null : "text"} name={name} value={value} onChange={(e) => onChange(e, name, e.target.value)} />
         </div>
     );
 };

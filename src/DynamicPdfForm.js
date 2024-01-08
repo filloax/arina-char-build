@@ -7,6 +7,7 @@ import {
     MultipleChoice,
 } from "./FormComponents";
 import { PDFDocument } from 'pdf-lib';
+import { zip } from './utils';
 
 const DEBUG = true;
 
@@ -19,6 +20,7 @@ const DynamicPdfForm = ({ jsonUrl }) => {
      */
     const [pdfDoc, setPdfDoc] = useState(null);
     const [debugInfo, setDebugInfo] = useState({});
+    const [pdfName, setPdfName] = useState(null);
 
     const fetchJsonFile = async () => {
         try {
@@ -26,6 +28,7 @@ const DynamicPdfForm = ({ jsonUrl }) => {
                 .then((res) => res.json())
                 .then((data) => {
                     setPageDefs(data.pages);
+                    setPdfName(data.pdf);
                     fetch(data.pdf)
                         .then((res) => res.arrayBuffer())
                         .then((pdfBytes) => PDFDocument.load(pdfBytes))
@@ -118,10 +121,35 @@ const DynamicPdfForm = ({ jsonUrl }) => {
         </div>
     );
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         console.log("Form Data:", formData);
-        // TODO: generate pdf
+        // Generate pdf
+        const form = pdfDoc.getForm();
+
+        /** @type {Array} */
+        const mergedPageFields = pageDefs.flatMap(page => page.entries);
+
+        // Merge fields by pdf key, ignore checkboxes for now
+        const byPdfKey = Object.groupBy(mergedPageFields, (f) => f.pdfkey)
+        delete byPdfKey["undefined"];
+
+        Object.entries(byPdfKey).forEach(([key, fields]) => {
+            const pdfField = form.getField(key);
+            const val = fields.map(f => formData[f.name]).join(" ");
+            pdfField.setText(val);
+            console.log("Set", pdfField, key, "to", val);
+        })
+
+        zip([[]]);
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = pdfName;
+        link.click();
     };
 
     const debugRender = () => <div id="debug">
@@ -132,7 +160,7 @@ const DynamicPdfForm = ({ jsonUrl }) => {
                 ...debugInfo,
                 'pdfFields': fieldNames,
             })
-        }}>Elenca campi PDF</button>
+        }}>Elenca campi PDF (in alternativa Acrobat e altri programmi aiutano a farlo visivamente)</button>
         <ol>
             {(debugInfo.pdfFields || []).map((name) => <li key={name}>{name}</li>)}
         </ol>
