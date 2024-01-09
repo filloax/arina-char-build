@@ -9,6 +9,8 @@ import {
 import { PDFDocument } from 'pdf-lib';
 import { zip } from './utils';
 
+// console.log(PDFDocument) // To access in console easily
+
 const DEBUG = true;
 
 const fieldTypes = {
@@ -167,8 +169,17 @@ const DynamicPdfForm = ({ jsonUrl }) => {
         /** @type {Array} */
         const mergedPageFields = pageDefs.flatMap(page => page.entries);
 
+        // Convert objects with ["a", "b"] values in pdfkey
+        const flattenedPdfKeys = mergedPageFields.reduce((acc, obj) => {
+            if (Array.isArray(obj.pdfkey)) {
+              const flattenedObjs = obj.pdfkey.map(key => ({ ...obj, pdfkey: key }));
+              return [...acc, ...flattenedObjs];
+            } else {
+              return [...acc, obj];
+            }
+          }, []);
         // Merge fields by pdf key, ignore checkboxes for now
-        const byPdfKey = Object.groupBy(mergedPageFields, (f) => f.pdfkey)
+        const byPdfKey = Object.groupBy(flattenedPdfKeys, (f) => f.pdfkey)
         delete byPdfKey["undefined"];
 
         Object.entries(byPdfKey).forEach(([key, fields]) => {
@@ -178,7 +189,24 @@ const DynamicPdfForm = ({ jsonUrl }) => {
             console.log("Set", pdfField, key, "to", val);
         })
 
-        zip([[]]);
+        // Handle checkbox areas
+        const checkboxes = mergedPageFields.filter(field => field.type == "checkboxes")
+        checkboxes.forEach(field => {
+            const selectedOptions = formData[field.name];
+            zip([field.options, field.pdfkeys]).forEach(([checkbox, pdfkey]) => {
+                const selected = selectedOptions.includes(checkbox);
+                const boxPdfkeys = Array.isArray(pdfkey) ? pdfkey : [pdfkey];
+                boxPdfkeys.forEach(key => {
+                    const pdfField = form.getCheckBox(key);
+                    if (selected) {
+                        pdfField.check();
+                    } else {
+                        pdfField.uncheck();
+                    }
+                    console.log("Set checkbox", pdfField, key, "to", selected);
+                });
+            });
+        });
 
         const pdfBytes = await pdfDoc.save();
 
@@ -191,7 +219,7 @@ const DynamicPdfForm = ({ jsonUrl }) => {
     };
 
     const debugRender = () => <div id="debug">
-        DEBUG
+        <h4>DEBUG</h4>
         <button onClick={async (e) => {
             e.preventDefault();
             const pdfDoc = await fetchPdfDoc();
@@ -200,7 +228,8 @@ const DynamicPdfForm = ({ jsonUrl }) => {
                 ...debugInfo,
                 'pdfFields': fieldNames,
             })
-        }}>Elenca campi PDF (in alternativa Acrobat e altri programmi aiutano a farlo visivamente)</button>
+        }}>Elenca campi PDF</button>
+        <div>In alternativa Acrobat e altri programmi (come <a href="https://www.pdfescape.com/online-pdf-editor/">PDFEscape</a>) aiutano a farlo visivamente, oppure <blockquote>pdftk file.pdf dump_data_fields &gt; out.txt</blockquote></div>
         <ol>
             {(debugInfo.pdfFields || []).map((name) => <li key={name}>&quot;{name}&quot;</li>)}
         </ol>

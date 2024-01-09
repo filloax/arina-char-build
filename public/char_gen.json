@@ -5,7 +5,7 @@
                 {
                     "type": "text",
                     "name": "Name",
-                    "pdfkey": "CharacterName 2"
+                    "pdfkey": ["CharacterName", "CharacterName 2"]
                 },
                 {
                     "type": "choice",
@@ -23,10 +23,10 @@
                 {
                     "type": "checkboxes",
                     "name": "Esempio Crocette",
-                    "options": ["Forza", "Destrezza"],
+                    "options": ["Forza", "Destrezza e Costituzione"],
                     "pdfkeys": [
                         "ST Strength",
-                        "ST Dexterity"
+                        ["ST Dexterity", "ST Constitution"]
                     ]
                 }
             ]
