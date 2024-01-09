@@ -106,7 +106,6 @@ const MultipleChoice = ({
                                 selectedOptions.splice(index, 1);
                             }
                         }
-                        console.log(e, name, selectedOptions, checked, option)
                         onChange(e, name, selectedOptions)
                     }}
                 />

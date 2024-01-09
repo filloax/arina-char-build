@@ -11,6 +11,7 @@
                     "type": "choice",
                     "name": "Class",
                     "options": ["Warrior", "Wizard", "Thief"],
+                    "default": "Thief",
                     "pdfkey": "ClassLevel"
                 },
                 {

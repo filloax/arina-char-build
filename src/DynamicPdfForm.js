@@ -11,16 +11,103 @@ import { zip } from './utils';
 
 const DEBUG = true;
 
+const fieldTypes = {
+    "text": function(field, formData, setFormData, handleChange) {
+        const render = () => (
+            <TextField
+                key={field.name}
+                label={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+            />
+        );
+
+        return { render }
+    },
+    "widetext": function(field, formData, setFormData, handleChange) {
+        const render = () => (
+            <TextField
+                key={field.name}
+                label={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                big={true}
+            />
+        );
+
+        return { render }
+    },
+    "choice": function(field, formData, setFormData, handleChange) {
+        const def = field.default || "";
+
+        const render = () => (
+            <ChoiceSelect
+                key={field.name}
+                label={field.name}
+                name={field.name}
+                options={field.options}
+                value={formData[field.name] || def}
+                onChange={handleChange}
+            />
+        );
+
+        const init = () => {
+            // Already put default value in formdata to
+            // correctly output in case it is not present
+            setFormData({
+                ...formData,
+                [field.name]: def,
+            })
+        }
+        
+        return { render, init }
+    },
+    "number": function(field, formData, setFormData, handleChange) {
+        const render = () => (
+            <NumberInput
+                key={field.name}
+                label={field.name}
+                name={field.name}
+                value={formData[field.name] || ""}
+                onChange={handleChange}
+                min={field.range[0]}
+                max={field.range[1]}
+            />
+        );
+
+        return { render }
+    },
+    "checkboxes": function(field, formData, setFormData, handleChange) {
+        const render = () => (
+            <MultipleChoice
+                key={field.name}
+                label={field.name}
+                name={field.name}
+                options={field.options}
+                selectedOptions={formData[field.name] || []}
+                onChange={handleChange}
+            />
+        );
+
+        return { render }
+    },
+}
+
 const DynamicPdfForm = ({ jsonUrl }) => {
     const [formData, setFormData] = useState({});
     const [pageDefs, setPageDefs] = useState([]);
     const [activePage, setActivePage] = useState(0);
-    /**
-     * @type {[PDFDocument, function]}
-     */
-    const [pdfDoc, setPdfDoc] = useState(null);
     const [debugInfo, setDebugInfo] = useState({});
-    const [pdfName, setPdfName] = useState(null);
+    const [pdfUrl, setPdfUrl] = useState(null);
+
+    /** @type {function(): Promise<PDFDocument>} */
+    const fetchPdfDoc = async () => {
+        return await fetch(pdfUrl)
+            .then((res) => res.arrayBuffer())
+            .then((pdfBytes) => PDFDocument.load(pdfBytes))
+    }
 
     const fetchJsonFile = async () => {
         try {
@@ -28,11 +115,16 @@ const DynamicPdfForm = ({ jsonUrl }) => {
                 .then((res) => res.json())
                 .then((data) => {
                     setPageDefs(data.pages);
-                    setPdfName(data.pdf);
-                    fetch(data.pdf)
-                        .then((res) => res.arrayBuffer())
-                        .then((pdfBytes) => PDFDocument.load(pdfBytes))
-                        .then((pdfDoc_) => setPdfDoc(pdfDoc_));
+                    setPdfUrl(data.pdf);
+
+                    data.pages.forEach(page => {
+                        page.entries.forEach(field => {
+                            const { init } = fieldTypes[field.type](field, formData, setFormData, setFormData, handleChange);
+                            if (init) {
+                                init();
+                            }
+                        });
+                    });
                 });
         } catch (error) {
             console.error("Error reading the file:", error);
@@ -54,65 +146,8 @@ const DynamicPdfForm = ({ jsonUrl }) => {
     };
 
     const renderFormField = (field) => {
-        switch (field.type) {
-            case "text":
-                return (
-                    <TextField
-                        key={field.name}
-                        label={field.name}
-                        name={field.name}
-                        value={formData[field.name] || ""}
-                        onChange={handleChange}
-                    />
-                );
-            case "widetext":
-                return (
-                    <TextField
-                        key={field.name}
-                        label={field.name}
-                        name={field.name}
-                        value={formData[field.name] || ""}
-                        onChange={handleChange}
-                        big={true}
-                    />
-                );
-            case "choice":
-                return (
-                    <ChoiceSelect
-                        key={field.name}
-                        label={field.name}
-                        name={field.name}
-                        options={field.options}
-                        value={formData[field.name] || ""}
-                        onChange={handleChange}
-                    />
-                );
-            case "number":
-                return (
-                    <NumberInput
-                        key={field.name}
-                        label={field.name}
-                        name={field.name}
-                        value={formData[field.name] || ""}
-                        onChange={handleChange}
-                        min={field.range[0]}
-                        max={field.range[1]}
-                    />
-                );
-            case "checkboxes":
-                return (
-                    <MultipleChoice
-                        key={field.name}
-                        label={field.name}
-                        name={field.name}
-                        options={field.options}
-                        selectedOptions={formData[field.name] || []}
-                        onChange={handleChange}
-                    />
-                );
-            default:
-                return null;
-        }
+        const { render } = fieldTypes[field.type](field, formData, setFormData, handleChange)
+        return render(field)
     };
 
     const renderPage = (page) => (
@@ -124,7 +159,9 @@ const DynamicPdfForm = ({ jsonUrl }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         console.log("Form Data:", formData);
+
         // Generate pdf
+        const pdfDoc = await fetchPdfDoc();
         const form = pdfDoc.getForm();
 
         /** @type {Array} */
@@ -144,17 +181,20 @@ const DynamicPdfForm = ({ jsonUrl }) => {
         zip([[]]);
 
         const pdfBytes = await pdfDoc.save();
+
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = pdfName;
+        link.download = pdfUrl;
         link.click();
     };
 
     const debugRender = () => <div id="debug">
         DEBUG
-        <button onClick={() => {
+        <button onClick={async (e) => {
+            e.preventDefault();
+            const pdfDoc = await fetchPdfDoc();
             const fieldNames = pdfDoc.getForm().getFields().map((f) => f.getName());
             setDebugInfo({
                 ...debugInfo,
@@ -162,7 +202,7 @@ const DynamicPdfForm = ({ jsonUrl }) => {
             })
         }}>Elenca campi PDF (in alternativa Acrobat e altri programmi aiutano a farlo visivamente)</button>
         <ol>
-            {(debugInfo.pdfFields || []).map((name) => <li key={name}>{name}</li>)}
+            {(debugInfo.pdfFields || []).map((name) => <li key={name}>&quot;{name}&quot;</li>)}
         </ol>
     </div>
 
